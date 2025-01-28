@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Route and Fuel Stops Visualization</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 600px;
+            width: 100%;
+        }
+
+        #controls {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Route and Fuel Stops Visualization</h1>
+    <div id="controls">
+        <label for="start">Start:</label>
+        <input type="text" id="start" value="New York, NY">
+        <label for="finish">Finish:</label>
+        <input type="text" id="finish" value="Chicago, IL">
+        <button onclick="updateRoute()">Update Route</button>
+    </div>
+    <div id="map"></div>
+    <div id="details">
+        <h2>Fuel Stops</h2>
+        <ul id="fuel-stops-list"></ul>
+        <h3>Total Cost: $<span id="total-cost">0.00</span></h3>
+        <h3>Total Distance: <span id="total-distance">0.00</span> mi</h3>
+    </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map
+        var map = L.map('map').setView([37.8, -96], 4);
+
+        // Add a tile layer to the map
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        function updateRoute() {
+            var start = document.getElementById('start').value;
+            var finish = document.getElementById('finish').value;
+            fetch(`http://localhost:8000/api/optimize-route/?start=${encodeURIComponent(start)}&finish=${encodeURIComponent(finish)}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Clear existing route and markers
+                    map.eachLayer(function (layer) {
+                        if (layer instanceof L.Polyline || layer instanceof L.Marker) {
+                            map.removeLayer(layer);
+                        }
+                    });
+
+                    // Add the route to the map
+                    var route = L.polyline(data.route, { color: 'blue' }).addTo(map);
+                    map.fitBounds(route.getBounds());
+
+                    // Add fuel stops to the map
+                    var fuelStopsList = document.getElementById('fuel-stops-list');
+                    fuelStopsList.innerHTML = '';
+                    data.fuel_stops.forEach(stop => {
+                        L.marker([stop.latitude, stop.longitude])
+                            .bindPopup(`<b>${stop.name}</b> - ${stop.address}, ${stop.city}, ${stop.state} - Price: $${stop.price} - Fuel Amount: ${stop.fuel_amount.toFixed(2)} gallons`)
+                            .addTo(map);
+
+                        // Add fuel stop details to the list
+                        var listItem = document.createElement('li');
+                        listItem.innerHTML = `<b>${stop.name}</b> - ${stop.address}, ${stop.city}, ${stop.state} - Price: $${stop.price} - Fuel Amount: ${stop.fuel_amount.toFixed(2)} gallons`;
+                        fuelStopsList.appendChild(listItem);
+                    });
+
+                    // Update total cost
+                    document.getElementById('total-cost').innerText = data.total_cost.toFixed(2);
+                    document.getElementById('total-distance').innerText = data.total_distance.toFixed(2);
+                })
+                .catch(error => console.error('Error fetching route data:', error));
+        }
+
+        // Initial route update
+        updateRoute();
+    </script>
+</body>
+
+</html>
