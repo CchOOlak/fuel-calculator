@@ -1,3 +1,4 @@
+import os
 import requests
 from geopy.distance import geodesic
 from rdp import rdp
@@ -7,11 +8,11 @@ from scipy.spatial import KDTree
 from .models import FuelStop
 
 
-ORS_API_KEY = "5b3ce3597851110001cf6248b468f1c932d44fbcb08fa4b0b91eeae6"
+ORS_API_KEY = os.getenv("ORS_API_KEY")
 ROUTING_API_URL = "https://api.openrouteservice.org/v2/directions/driving-car"
 GEOCODING_API_URL = "https://api.openrouteservice.org/geocode/search"
 NOMINATIM_API_URL = "https://nominatim.openstreetmap.org/search"
-USER_AGENT = "TrukStop/1.0 (xhamidmozafaryx@gmail.com)"
+USER_AGENT = os.getenv("USER_AGENT")
 
 
 def get_route(start_coords, finish_coords):

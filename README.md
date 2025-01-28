@@ -17,6 +17,11 @@ This project is a Django-based API that calculates the optimal fuel stops along 
 - geopy
 - rdp
 
+## Environments
+
+- ORS_API_KEY
+- USER_AGENT
+
 ## Installation
 
 1. Clone the repository:
